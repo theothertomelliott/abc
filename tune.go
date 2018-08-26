@@ -1,15 +1,24 @@
 package abc
 
 type Tune struct {
-	Sequence   int
-	Title      string
-	Composer   string
-	Comments   []string
-	Rhythm     string
-	Origin     string
-	Meter      Meter
-	NoteLength float64
-	Key        Key
+	Area           string // deprecated
+	Book           string
+	Composer       string
+	Discography    string
+	FileURL        string
+	History        []string
+	Group          string
+	Sequence       int
+	Title          string
+	Comments       []string
+	Rhythm         string
+	Origin         string
+	Meter          Meter
+	NoteLength     NoteLength
+	Key            Key
+	Source         string
+	Transcription  string
+	WordsAfterTune []string
 
 	Bars []Bar
 }
@@ -32,5 +41,10 @@ type Key string
 
 type Meter struct {
 	Numerator   []int
+	Denominator int
+}
+
+type NoteLength struct {
+	Numerator   int
 	Denominator int
 }

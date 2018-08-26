@@ -63,25 +63,83 @@ func (p *parser) handleItem(item *item) error {
 }
 
 func (p *parser) handleFieldName(item *item) error {
+	var err error
 	switch item.val {
-	case string(headerX):
-		return p.setSequence()
-	case string(headerT):
+	case string(headerA):
+		p.currentTune.Area, err = p.expectString()
+		return err
+	case string(headerB):
+		p.currentTune.Book, err = p.expectString()
+		return err
+	case string(headerC):
+		p.currentTune.Composer, err = p.expectString()
+		return err
+	case string(headerD):
+		p.currentTune.Discography, err = p.expectString()
+		return err
+	case string(headerF):
+		p.currentTune.FileURL, err = p.expectString()
+		return err
+	case string(headerG):
+		p.currentTune.Group, err = p.expectString()
+		return err
+	case string(headerH):
+		return p.addHistory()
+	case string(headerI):
 		// TODO
-	case string(headerN):
-		// TODO
-	case string(headerM):
-		return p.setMeter()
-	case string(headerL):
-		// TODO
+		return p.consumeToNewline()
 	case string(headerK):
 		// TODO
-	case string(headerC):
+		return p.consumeToNewline()
+	case string(headerL):
+		return p.setNoteLength()
+	case string(headerM):
+		return p.setMeter()
+	case string(headerm):
 		// TODO
+		return p.consumeToNewline()
+	case string(headerN):
+		return p.addNotes()
 	case string(headerO):
-		return p.setOrigin()
+		p.currentTune.Origin, err = p.expectString()
+		return err
+	case string(headerP):
+		// TODO
+		return p.consumeToNewline()
+	case string(headerQ):
+		// TODO
+		return p.consumeToNewline()
 	case string(headerR):
-		return p.setRhythm()
+		p.currentTune.Rhythm, err = p.expectString()
+		return err
+	case string(headerr):
+		// Ignore remarks
+		return p.consumeToNewline()
+	case string(headerS):
+		p.currentTune.Source, err = p.expectString()
+		return err
+	case string(headers):
+		// TODO
+		return p.consumeToNewline()
+	case string(headerT):
+		p.currentTune.Title, err = p.expectString()
+		return err
+	case string(headerU):
+		// TODO
+		return p.consumeToNewline()
+	case string(headerV):
+		// TODO
+		return p.consumeToNewline()
+	case string(headerW):
+		return p.addWordsAfterTune()
+	case string(headerw):
+		// TODO
+		return p.consumeToNewline()
+	case string(headerX):
+		return p.setSequence()
+	case string(headerZ):
+		p.currentTune.Transcription, err = p.expectString()
+		return err
 	}
 	return errors.New("unhandled")
 }
@@ -135,21 +193,65 @@ func (p *parser) setMeter() error {
 	return p.consumeToNewline()
 }
 
-func (p *parser) setRhythm() error {
+func (p *parser) setNoteLength() error {
+	noteLength := abc.NoteLength{}
+
+	// Numerator
+	item, err := p.expect(itemNumber)
+	if err != nil {
+		return err
+	}
+	noteLength.Numerator, _ = strconv.Atoi(item.val)
+
+	// Divide separator
+	item, err = p.expect(itemDivide)
+	if err != nil {
+		return err
+	}
+
+	// Denominator
+	item, err = p.expect(itemNumber)
+	if err != nil {
+		return err
+	}
+	noteLength.Denominator, _ = strconv.Atoi(item.val)
+
+	p.currentTune.NoteLength = noteLength
+	return p.consumeToNewline()
+}
+
+func (p *parser) expectString() (string, error) {
+	item, err := p.expect(itemString)
+	if err != nil {
+		return "", err
+	}
+	return item.val, p.expectNewline()
+}
+
+func (p *parser) addNotes() error {
 	item, err := p.expect(itemString)
 	if err != nil {
 		return err
 	}
-	p.currentTune.Rhythm = item.val
+	p.currentTune.Comments = append(p.currentTune.Comments, item.val)
 	return p.expectNewline()
 }
 
-func (p *parser) setOrigin() error {
+func (p *parser) addWordsAfterTune() error {
 	item, err := p.expect(itemString)
 	if err != nil {
 		return err
 	}
-	p.currentTune.Origin = item.val
+	p.currentTune.WordsAfterTune = append(p.currentTune.WordsAfterTune, item.val)
+	return p.expectNewline()
+}
+
+func (p *parser) addHistory() error {
+	item, err := p.expect(itemString)
+	if err != nil {
+		return err
+	}
+	p.currentTune.History = append(p.currentTune.History, item.val)
 	return p.expectNewline()
 }
 

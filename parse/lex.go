@@ -216,15 +216,33 @@ func (l *lexer) run() {
 // state functions
 
 const (
-	headerX = 'X'
-	headerT = 'T'
-	headerN = 'N'
-	headerM = 'M'
-	headerL = 'L'
-	headerK = 'K'
-	headerC = 'C'
-	headerO = 'O'
-	headerR = 'R'
+	headerA = 'A' // Area
+	headerB = 'B' // Book
+	headerC = 'C' // Composer
+	headerD = 'D' // Discography
+	headerF = 'F' // File URL
+	headerG = 'G' // File group
+	headerH = 'H' // History
+	headerI = 'I' // Instruction
+	headerK = 'K' // Key
+	headerL = 'L' // Unit note length
+	headerM = 'M' // Meter
+	headerm = 'm' // Macro
+	headerN = 'N' // Notes
+	headerO = 'O' // Origin
+	headerP = 'P' // Parts
+	headerQ = 'Q' // Tempo
+	headerR = 'R' // Rhythm
+	headerr = 'r' // Remark
+	headerS = 'S' // Source
+	headers = 's' // Symbol line
+	headerT = 'T' // Tune title
+	headerU = 'U' // User defined
+	headerV = 'V' // Voice
+	headerW = 'W' // Words (printed after end of tune)
+	headerw = 'w' // Words (printed aligned with the notes of a tune)
+	headerX = 'X' // Sequence number
+	headerZ = 'Z' // Transcription
 
 	colon = ":"
 )
@@ -475,20 +493,16 @@ func lexHeaderLine(l *lexer) stateFn {
 	switch fieldName {
 	case headerX:
 		return lexHeaderInt
-	case headerT, headerN:
+	case headerT, headerN, headerC, headerO, headerR:
 		return lexHeaderString
+	case headerr:
+		return lexHeaderRemark
 	case headerM:
 		return lexHeaderMeter
 	case headerL:
 		return lexHeaderNoteLength
 	case headerK:
 		// TODO: Implement something for the key
-		return lexHeaderString
-	case headerC:
-		return lexHeaderString
-	case headerO:
-		return lexHeaderString
-	case headerR:
 		return lexHeaderString
 	default:
 		l.errorf("unknown header field %s", string(fieldName))
@@ -506,6 +520,13 @@ func lexHeaderInt(l *lexer) stateFn {
 	l.ignoreWhitespace()
 	l.acceptDecimalRun()
 	l.emit(itemNumber)
+	return lexNextLine
+}
+
+// lexHeaderRemark ignores remark fields
+func lexHeaderRemark(l *lexer) stateFn {
+	l.ignoreWhitespace()
+	l.consumeToEndOfLine()
 	return lexNextLine
 }
 
