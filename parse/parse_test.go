@@ -37,7 +37,7 @@ func TestParse(t *testing.T) {
 				i(itemFieldName, "X"), i(itemNumber, "1"), newline(),
 				i(itemFieldName, "M"), i(itemNumber, "4"), i(itemDivide, "/"), i(itemNumber, "4"), newline(),
 				i(itemFieldName, "O"), i(itemString, "Irish"), newline(),
-				i(itemFieldName, "R"), i(itemString, "Reel"),
+				i(itemFieldName, "R"), i(itemString, "Reel"), newline(),
 			},
 			expected: []abc.Tune{
 				abc.Tune{

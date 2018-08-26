@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -70,7 +71,7 @@ func (p *parser) handleFieldName(item *item) error {
 	case string(headerN):
 		// TODO
 	case string(headerM):
-		// TODO
+		return p.setMeter()
 	case string(headerL):
 		// TODO
 	case string(headerK):
@@ -78,11 +79,22 @@ func (p *parser) handleFieldName(item *item) error {
 	case string(headerC):
 		// TODO
 	case string(headerO):
-		// TODO
+		return p.setOrigin()
 	case string(headerR):
-		// TODO
+		return p.setRhythm()
+	}
+	return errors.New("unhandled")
+}
+
+func (p *parser) consumeToNewline() error {
+	for item := p.lexer.nextItem(); item != nil && item.typ != itemNewline; item = p.lexer.nextItem() {
 	}
 	return nil
+}
+
+func (p *parser) expectNewline() error {
+	_, err := p.expect(itemNewline)
+	return err
 }
 
 func (p *parser) expect(types ...itemType) (*item, error) {
@@ -98,16 +110,47 @@ func (p *parser) expect(types ...itemType) (*item, error) {
 	return nil, fmt.Errorf("expected one of %v, got nil token", types)
 }
 
+func (p *parser) setMeter() error {
+	meter := abc.Meter{}
+	// Numerator
+	for item := p.lexer.nextItem(); item != nil && item.typ != itemDivide; item = p.lexer.nextItem() {
+		switch item.typ {
+		case itemNumber:
+			numeratorValue, _ := strconv.Atoi(item.val)
+			meter.Numerator = append(meter.Numerator, numeratorValue)
+		case itemPlus:
+		default:
+			return fmt.Errorf("expected number or plus, got %v", item)
+		}
+	}
+
+	// Denominator
+	item, err := p.expect(itemNumber)
+	if err != nil {
+		return err
+	}
+	meter.Denominator, _ = strconv.Atoi(item.val)
+
+	p.currentTune.Meter = meter
+	return p.consumeToNewline()
+}
+
 func (p *parser) setRhythm() error {
 	item, err := p.expect(itemString)
 	if err != nil {
 		return err
 	}
-	sequenceNum, _ := strconv.Atoi(item.val)
-	p.currentTune = &abc.Tune{
-		Sequence: sequenceNum,
+	p.currentTune.Rhythm = item.val
+	return p.expectNewline()
+}
+
+func (p *parser) setOrigin() error {
+	item, err := p.expect(itemString)
+	if err != nil {
+		return err
 	}
-	return nil
+	p.currentTune.Origin = item.val
+	return p.expectNewline()
 }
 
 func (p *parser) setSequence() error {
@@ -122,5 +165,5 @@ func (p *parser) setSequence() error {
 	p.currentTune = &abc.Tune{
 		Sequence: sequenceNum,
 	}
-	return nil
+	return p.expectNewline()
 }
